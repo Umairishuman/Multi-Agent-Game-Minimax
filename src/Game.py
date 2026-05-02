@@ -1,6 +1,8 @@
+from Board import Board
+
 class Game:
-    def __init__(self):
-        pass
+    def __init__(self, path):
+        self.board = Board(path)
     
     def play(self):
-        pass
+        print("playing")
