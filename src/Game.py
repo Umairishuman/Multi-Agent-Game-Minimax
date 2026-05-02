@@ -1,5 +1,6 @@
 from Board import Board
 from Agents import ExpertAgent, IntermediateAgent, NoviceAgent
+from GUIController import GUI
 
 class Game:
     def __init__(self, path):
