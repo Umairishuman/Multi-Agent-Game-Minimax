@@ -8,13 +8,24 @@ class Cell:
 
 
 class Board:
-    def __init__(self, filepath):
-        self.parseBoard(filepath)
-    def parseBoard(self, filepath):
-        with open(filepath) as f:
-            data = f.read()
+    def __init__(self, board, rows, cols):
+        self.board = self.parseBoard(board)
+        self.rows = rows
+        self.cols = cols
         
-        print(data)
 
+    def parseBoard(self, board):
+        parsedBoard = []
+        for row in board:
+            parsedRow = []
+            for cell in row:
+                parsedRow.append(Cell(cell, None))
+            parsedBoard.append(parsedRow)
+        return parsedBoard
     
+    
+    def printBoard(self):
+        for row in self.board:
+            print(''.join([cell.type for cell in row]))
+            
     
