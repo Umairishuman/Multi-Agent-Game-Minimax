@@ -1,3 +1,6 @@
 from Game import Game
 def main():
-    pass
+    game = Game("../input/board.txt")
+    game.play()
+if __name__ == "__main__":
+    main()
