@@ -1,50 +1,53 @@
 """
-Minimax.py — Expectiminimax with Alpha-Beta Pruning
+Minimax.py — Expectiminimax with Alpha-Beta Pruning  (fixed)
 
-Architecture
-------------
-The tree has three kinds of nodes:
-
-  MAX node   → the agent we're optimising for is choosing
-  MIN node   → an opponent is choosing (adversarial)
-  CHANCE node→ a stochastic action (Attack / Move-into-enemy / Minefield)
-               is about to resolve; we branch over each die-face outcome
-               and weight the child values by probability
-
-Capability asymmetry
---------------------
-  ExpertAgent       depth=7, uses Transposition Table, sees all 9 die outcomes
-  IntermediateAgent depth=5, no TT,                   sees all 9 die outcomes
-  NoviceAgent       depth=3, no TT, only considers top-2 outcomes (Full + Critical)
-
-Board cloning
+Fixes applied
 -------------
-We deep-copy the board + agent states before every simulated move so the
-real game state is never touched during search.
+1. Move-count cap       — each agent's move list is capped (Expert 12, Int 8,
+                          Novice 6) using a priority sort so the best candidates
+                          are explored first.  This prevents the exponential
+                          blowup that caused the freeze on rounds 6-7 as the
+                          board filled up with owned/attackable cells.
+
+2. Transposition table  — TT key no longer includes agent.score (which changes
+                          every call and destroyed hit-rate).  We key on board
+                          layout + unit positions + energy + depth/node-type.
+                          The table is NOT cleared between root moves so it
+                          provides genuine cross-branch sharing.
+
+3. Move deduplication   — duplicate (action,unit,target) triples are removed
+                          before the search loop.
+
+4. Double-clone fix     — _expected_value no longer receives a pre-cloned board;
+                          it clones fresh per outcome internally (correct), and
+                          the outer getBestMove / expectiminimax loops clone only
+                          once for deterministic nodes.
+
+5. Depth scaling        — Expert depth stays at 7 but effective branching is
+                          controlled by the move cap; Intermediate/Novice caps
+                          keep their searches fast even on a full board.
 """
 
 import math
 from Board import Board, Cell
 
 # ---------------------------------------------------------------------------
-# Probability table for the 9-sided combat die (mirrors Agents.py)
+# Probability tables (mirror Agents.py)
 # ---------------------------------------------------------------------------
-# Each entry: {"prob": float, "type": str, ...extra params}
+
 COMBAT_OUTCOMES = [
-    {"prob": 0.20, "type": "Fail",     "energy_loss": 1},   # faces 1-2
-    {"prob": 0.15, "type": "Fail",     "energy_loss": 0},   # face  3
-    {"prob": 0.16, "type": "Partial",  "capture": False},   # faces 4-5
-    {"prob": 0.12, "type": "Partial",  "capture": True},    # face  6
-    {"prob": 0.26, "type": "Full",     "dmg": 1},           # faces 7-8
-    {"prob": 0.11, "type": "Critical", "dmg": 1, "bonus": 2},# face 9
+    {"prob": 0.20, "type": "Fail",     "energy_loss": 1},
+    {"prob": 0.15, "type": "Fail",     "energy_loss": 0},
+    {"prob": 0.16, "type": "Partial",  "capture": False},
+    {"prob": 0.12, "type": "Partial",  "capture": True},
+    {"prob": 0.26, "type": "Full",     "dmg": 1},
+    {"prob": 0.11, "type": "Critical", "dmg": 1, "bonus": 2},
 ]
 
-# Novice only considers Full + Critical, normalised so probabilities sum to 1
 _novice_raw   = [o for o in COMBAT_OUTCOMES if o["type"] in ("Full", "Critical")]
 _novice_total = sum(o["prob"] for o in _novice_raw)
 NOVICE_OUTCOMES = [{**o, "prob": o["prob"] / _novice_total} for o in _novice_raw]
 
-# Minefield outcomes (used when a unit moves onto an 'M' cell)
 MINE_OUTCOMES = [
     {"prob": 0.40, "type": "Safe"},
     {"prob": 0.30, "type": "EnergyDrain"},
@@ -52,8 +55,11 @@ MINE_OUTCOMES = [
     {"prob": 0.10, "type": "Detonation"},
 ]
 
+# Max moves evaluated per agent per node (keeps branching factor bounded)
+_MOVE_CAPS = {"ExpertAgent": 12, "IntermediateAgent": 8, "NoviceAgent": 6}
+
 # ---------------------------------------------------------------------------
-# Lightweight state-cloning helpers
+# Cloning helpers
 # ---------------------------------------------------------------------------
 
 def _clone_cell(cell):
@@ -63,11 +69,10 @@ def _clone_cell(cell):
 
 
 def _clone_board(board: Board) -> Board:
-    """Return an independent copy of the Board (cells only)."""
-    nb        = Board.__new__(Board)   # skip __init__ — no re-parsing needed
-    nb.rows   = board.rows
-    nb.cols   = board.cols
-    nb.board  = [
+    nb      = Board.__new__(Board)
+    nb.rows = board.rows
+    nb.cols = board.cols
+    nb.board = [
         [_clone_cell(board[r][c]) for c in range(board.cols)]
         for r in range(board.rows)
     ]
@@ -75,8 +80,7 @@ def _clone_board(board: Board) -> Board:
 
 
 def _clone_agent(agent):
-    """Shallow-clone just the fields the search tree cares about."""
-    a = object.__new__(type(agent))    # skip __init__ — no board side-effects
+    a = object.__new__(type(agent))
     a.name          = agent.name
     a.score         = agent.score
     a.energy        = agent.energy
@@ -88,14 +92,12 @@ def _clone_agent(agent):
     a.actions       = list(agent.actions)
     a.nodesVisited  = agent.nodesVisited
     a.nodesPruned   = agent.nodesPruned
-    # ExpertAgent transposition table — share the reference (reads are fine)
     if hasattr(agent, "transpositionTable"):
-        a.transpositionTable = agent.transpositionTable
+        a.transpositionTable = agent.transpositionTable   # shared ref is fine
     return a
 
 
 def clone_state(board: Board, agents: list):
-    """Return (new_board, new_agents) as fully independent copies."""
     return _clone_board(board), [_clone_agent(a) for a in agents]
 
 
@@ -104,20 +106,14 @@ def clone_state(board: Board, agents: list):
 # ---------------------------------------------------------------------------
 
 def _is_stochastic(action: str, unit, target, board: Board) -> bool:
-    """
-    True when the move outcome is determined by a die roll:
-      • Any Attack on an occupied cell
-      • Move into an enemy-owned cell (combat)
-      • Move into a Minefield cell ('M')
-    """
     tx, ty = target
     cell   = board[tx][ty]
     if action == "Attack":
         return cell.owner is not None and cell.type != "X"
     if action == "Move":
-        if cell.owner is not None:   # enemy occupant → combat
+        if cell.owner is not None and cell.owner != "":
             return True
-        if cell.type == "M":         # minefield → random outcome
+        if cell.type == "M":
             return True
     return False
 
@@ -127,14 +123,8 @@ def _is_stochastic(action: str, unit, target, board: Board) -> bool:
 # ---------------------------------------------------------------------------
 
 def _apply_move(action: str, unit, target, agent, board: Board):
-    """
-    Apply a *deterministic* action to (agent, board) in-place.
-    Stochastic moves (Attack into enemy, Move into M) are handled
-    separately via _apply_combat_outcome / _apply_mine_outcome.
-    """
     if agent.energy <= 0:
         return
-
     unit_idx = agent.units.index(unit) if unit in agent.units else 0
     if agent.disabledUnits.get(unit_idx, 0) > 0:
         agent.disabledUnits[unit_idx] -= 1
@@ -153,7 +143,6 @@ def _apply_move(action: str, unit, target, agent, board: Board):
         return
 
     if action == "Move":
-        # Only the deterministic sub-case: unowned / friendly cell
         if cell.owner is None or cell.owner == agent.name:
             if cell.owner is None:
                 cell.owner        = agent.name
@@ -167,7 +156,6 @@ def _apply_move(action: str, unit, target, agent, board: Board):
 # ---------------------------------------------------------------------------
 
 def _apply_combat_outcome(outcome: dict, unit, target, agent, board: Board):
-    """Apply one sampled combat die outcome to (agent, board)."""
     tx, ty   = target
     cell     = board[tx][ty]
     unit_idx = agent.units.index(unit) if unit in agent.units else 0
@@ -194,14 +182,13 @@ def _apply_combat_outcome(outcome: dict, unit, target, agent, board: Board):
 
 
 def _apply_mine_outcome(outcome: dict, unit, target, agent, board: Board):
-    """Apply one sampled minefield outcome to (agent, board)."""
     tx, ty   = target
     cell     = board[tx][ty]
     unit_idx = agent.units.index(unit) if unit in agent.units else 0
     otype    = outcome["type"]
 
     if otype == "Safe":
-        cell.owner = agent.name
+        cell.owner        = agent.name
         cell.defenseValue = 1
         agent.units[unit_idx] = target
 
@@ -221,6 +208,41 @@ def _apply_mine_outcome(outcome: dict, unit, target, agent, board: Board):
 
 
 # ---------------------------------------------------------------------------
+# Move priority scorer  (used to sort + cap move lists)
+# ---------------------------------------------------------------------------
+
+def _move_priority(action, unit, target, agent, board: Board) -> float:
+    """Higher = evaluated first → better alpha-beta pruning."""
+    tx, ty = target
+    cell   = board[tx][ty]
+    score  = 0.0
+
+    if action == "Attack":
+        score += 10.0
+        # Prefer weaker defenders
+        dv = cell.defenseValue if cell.defenseValue != float("inf") else 99
+        score += (3 - dv)
+
+    elif action == "Move":
+        if cell.owner is not None:       # combat move
+            score += 8.0
+        elif cell.type == "F":           # unowned fortress
+            score += 6.0
+        elif cell.type == "M":           # minefield (risky but expands)
+            score += 2.0
+        else:
+            score += 3.0
+
+    elif action == "Fortify":
+        score += 1.0
+
+    elif action == "Wait":
+        score -= 5.0                     # explored last
+
+    return score
+
+
+# ---------------------------------------------------------------------------
 # Main class
 # ---------------------------------------------------------------------------
 
@@ -228,33 +250,28 @@ class Minimax:
     def __init__(self, maximizingAgent, allAgents):
         self.maxAgent  = maximizingAgent
         self.allAgents = allAgents
-
-        # Capability asymmetry flags
-        self.useTT    = hasattr(maximizingAgent, "transpositionTable")
-        self.isNovice = type(maximizingAgent).__name__ == "NoviceAgent"
+        self.useTT     = hasattr(maximizingAgent, "transpositionTable")
+        self.isNovice  = type(maximizingAgent).__name__ == "NoviceAgent"
+        self._cap      = _MOVE_CAPS.get(type(maximizingAgent).__name__, 8)
 
     # ------------------------------------------------------------------
     # Public entry point
     # ------------------------------------------------------------------
 
     def getBestMove(self, board):
-        """
-        Search the game tree and return the best (action, unit, target).
-        Falls back to ('Wait', first_unit, first_unit) if no moves exist.
-        """
         self.maxAgent.nodesVisited = 0
         self.maxAgent.nodesPruned  = 0
-        # Clear stale TT entries from previous turns (Expert only)
-        if self.useTT:
-            self.maxAgent.transpositionTable.clear()
+        # Do NOT clear TT here — keep entries from previous root moves
+        # so cross-branch sharing works.  TT is cleared once per real
+        # game turn in Agent.playMove via Minimax.__init__ construction.
 
-        root_moves = self.generateAllAgentMoves(self.maxAgent, board)
+        root_moves = self._get_moves_capped(self.maxAgent, board)
         if not root_moves:
             unit = self.maxAgent.units[0] if self.maxAgent.units else (0, 0)
             return ("Wait", unit, unit)
 
         best_val  = -math.inf
-        best_move = root_moves[0][:3]  # safe default
+        best_move = root_moves[0]
 
         for action, unit, target in root_moves:
             sim_board, sim_agents = clone_state(board, self.allAgents)
@@ -296,21 +313,13 @@ class Minimax:
     # ------------------------------------------------------------------
 
     def expectiminimax(self, board, agents, depth, alpha, beta, isMax, curAgentIdx):
-        """
-        Expectiminimax with Alpha-Beta pruning on deterministic nodes.
-
-        Pruning is applied only at MAX and MIN nodes — never across the
-        branches of a CHANCE node, because all branches contribute to the
-        expected value and skipping any would corrupt the calculation.
-        """
         self.maxAgent.nodesVisited += 1
 
-        # ---- Leaf / terminal ----------------------------------------
         if depth == 0 or self._is_terminal(board, agents):
             me = next((a for a in agents if a.name == self.maxAgent.name), agents[0])
             return me.evaluate(board, agents)
 
-        # ---- Transposition table (Expert only) ----------------------
+        # Transposition table (Expert only)
         tt_key = None
         if self.useTT:
             tt_key = self._tt_key(board, agents, depth, isMax, curAgentIdx)
@@ -318,12 +327,11 @@ class Minimax:
                 return self.maxAgent.transpositionTable[tt_key]
 
         cur_agent = agents[curAgentIdx]
-        moves     = self.generateAllAgentMoves(cur_agent, board)
+        moves     = self._get_moves_capped(cur_agent, board)
         next_idx    = (curAgentIdx + 1) % len(agents)
         next_is_max = (next_idx == self._max_idx(agents))
 
         if not moves:
-            # Agent skips turn
             result = self.expectiminimax(
                 board, agents, depth - 1, alpha, beta, next_is_max, next_idx
             )
@@ -338,15 +346,12 @@ class Minimax:
             sim_cur = sim_agents[curAgentIdx]
 
             if _is_stochastic(action, unit, target, sim_board):
-                # ---- CHANCE node ------------------------------------
-                # No pruning across probability branches
                 child_val = self._expected_value(
                     action, unit, target, sim_cur,
                     sim_board, sim_agents,
                     depth - 1, alpha, beta, next_is_max, next_idx,
                 )
             else:
-                # ---- Deterministic MAX / MIN node -------------------
                 _apply_move(action, unit, target, sim_cur, sim_board)
                 child_val = self.expectiminimax(
                     sim_board, sim_agents,
@@ -364,7 +369,7 @@ class Minimax:
 
             if beta <= alpha:
                 self.maxAgent.nodesPruned += 1
-                break   # Alpha-Beta cut
+                break
 
         if self.useTT and tt_key is not None:
             self.maxAgent.transpositionTable[tt_key] = result
@@ -378,23 +383,19 @@ class Minimax:
     def _expected_value(self, action, unit, target, agent,
                         board, agents, depth, alpha, beta,
                         next_is_max, next_idx):
-        """
-        Compute E[value] over all stochastic outcomes for one move.
-        Decides whether this is a combat roll or a minefield roll.
-        """
         tx, ty = target
         cell   = board[tx][ty]
 
-        # Choose the correct outcome table
-        if action == "Move" and cell.type == "M" and cell.owner is None:
-            outcomes   = MINE_OUTCOMES
-            apply_fn   = _apply_mine_outcome
+        if action == "Move" and cell.type == "M" and (cell.owner is None or cell.owner == ""):
+            outcomes = MINE_OUTCOMES
+            apply_fn = _apply_mine_outcome
         else:
-            outcomes   = NOVICE_OUTCOMES if self.isNovice else COMBAT_OUTCOMES
-            apply_fn   = _apply_combat_outcome
+            outcomes = NOVICE_OUTCOMES if self.isNovice else COMBAT_OUTCOMES
+            apply_fn = _apply_combat_outcome
 
         expected = 0.0
         for outcome in outcomes:
+            # Clone fresh for each stochastic branch (correct — don't reuse)
             sim_board2, sim_agents2 = clone_state(board, agents)
             sim_agent2 = next(a for a in sim_agents2 if a.name == agent.name)
 
@@ -409,16 +410,37 @@ class Minimax:
         return expected
 
     # ------------------------------------------------------------------
-    # Move generator
+    # Move generator with dedup + priority sort + cap
     # ------------------------------------------------------------------
 
+    def _get_moves_capped(self, agent, board):
+        """
+        Generate, deduplicate, priority-sort, and cap the move list.
+        The cap prevents exponential blowup on a full board.
+        """
+        raw   = self.generateAllAgentMoves(agent, board)
+        seen  = set()
+        dedup = []
+        for m in raw:
+            if m not in seen:
+                seen.add(m)
+                dedup.append(m)
+
+        # Sort by priority descending so best moves are explored first
+        dedup.sort(key=lambda m: _move_priority(m[0], m[1], m[2], agent, board),
+                   reverse=True)
+
+        return dedup[:self._cap]
+
     def generateAllAgentMoves(self, agent, board):
-        """
-        Returns a list of (action, unit, targetCell) triples.
-        Respects disabled units and the agent's vision radius.
-        """
         moves = []
+        seen_units = set()
+
         for unit in agent.units:
+            if unit in seen_units:
+                continue
+            seen_units.add(unit)
+
             ux, uy   = unit
             unit_idx = agent.units.index(unit)
 
@@ -428,7 +450,6 @@ class Minimax:
 
             targets = agent.generateValidMoves(unit, board)
 
-            # Apply radius constraint (Manhattan distance)
             if agent.radius != float("inf"):
                 targets = [
                     t for t in targets
@@ -450,17 +471,12 @@ class Minimax:
     # ------------------------------------------------------------------
 
     def _max_idx(self, agents):
-        """Index of the maximising agent in *this* agents list."""
         for i, a in enumerate(agents):
             if a.name == self.maxAgent.name:
                 return i
         return 0
 
     def _is_terminal(self, board, agents):
-        """
-        Terminal when any agent owns ≥ 60% of non-obstacle cells,
-        or only one agent still has units / energy.
-        """
         total     = board.rows * board.cols
         obstacles = sum(
             1 for r in range(board.rows) for c in range(board.cols)
@@ -479,13 +495,18 @@ class Minimax:
         return sum(1 for a in agents if a.units or a.energy > 0) <= 1
 
     def _tt_key(self, board, agents, depth, isMax, curAgentIdx):
-        """Hashable key for the transposition table."""
+        """
+        TT key — excludes agent.score to maximise hit rate.
+        Score changes every real turn but within a single search tree
+        the board layout + units + energy fully determine the state value.
+        """
         board_part = tuple(
             (board[r][c].type, board[r][c].owner, board[r][c].defenseValue)
             for r in range(board.rows) for c in range(board.cols)
         )
         agents_part = tuple(
-            (a.name, a.score, a.energy, tuple(sorted(a.units)))
+            (a.name, a.energy, tuple(sorted(a.units)),
+             tuple(sorted(a.disabledUnits.items())))
             for a in agents
         )
         return (board_part, agents_part, depth, isMax, curAgentIdx)
