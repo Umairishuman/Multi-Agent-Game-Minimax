@@ -1,3 +1,3 @@
 class Minimax: 
-    def __init__(self, game):
+    def __init__(self, board):
         pass

@@ -152,19 +152,70 @@ class Agent:
         if roll == "EnergyDrain":
             self.energy -= 3
         elif roll == "Disabled":
-            self.disabledUnits[unitIndex] = 2 # Unit cannot act for 2 turns
+            self.disabledUnits[unitIndex] = 2 
         elif roll == "Detonation":
-            cell.type = 'X' # Permanently becomes an obstacle
+            cell.type = 'X' 
             cell.defenseValue = float('inf')
             cell.owner = None
             self.energy -= 5
     
+    
     def playMove(self, board):
         # minimax = Minimax(self, board)
-        print("Agent is thinking...")
-        print("Agent has made a move!")
-
-
+        unit = random.choice(self.units)
+        targetCell = random.choice(self.generateValidMoves(unit, board))
+        action = random.choice(self.generateValidActions(unit, targetCell, board))
+        self.perform_action(action, unit, targetCell, board)
+        self.updateScore(board)
+        print(f"{self.name} performs {action} with unit at {unit} targeting cell {targetCell}. Energy left: {self.energy}, Score: {self.score}")
+    
+    
+    def updateScore(self, board):
+        round_score = 0
+        for x in range(board.rows):
+            for y in range(board.cols):
+                cell = board[x][y]
+                if cell.owner == self.name:
+                    if cell.type == 'F':
+                        round_score += 3 
+                    else:
+                        round_score += 1 
+                        
+        self.score += round_score
+        
+    def __str__(self):
+        return f"{self.name} - Energy: {self.energy}, Score: {self.score}, Units: {self.units}, Disabled: {self.disabledUnits}"
+    
+    def awardEliminationBonus(self):
+        self.score += 5 
+    def generateValidMoves(self, unit, board):
+        x, y = unit
+        potentialMoves = [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
+        validMoves = []
+        
+        for mx, my in potentialMoves:
+            if 0 <= mx < board.rows and 0 <= my < board.cols and board[mx][my].type != 'X':
+                validMoves.append((mx, my))
+        
+        return validMoves
+    def generateValidActions(self, unit, targetCell, board):
+        x, y = unit
+        targetX, targetY = targetCell
+        cell = board[targetX][targetY]
+        
+        actions = ['Wait', ]
+        
+        if cell.owner == self.name and cell.defenseValue < 3:
+            actions.append("Fortify")
+        
+        if cell.owner != self.name and cell.owner is not None and cell.type != 'X':
+            actions.append("Attack")
+        
+        if cell.owner != self.name  and cell.type is not 'X':
+            actions.append("Move")
+        
+        
+        return actions
 class ExpertAgent(Agent):
     def __init__(self, energy= 20, maxDepth=7, x=0, y=0, name="Expert", radius=float('inf')):
         super().__init__(energy, maxDepth, x, y, name, radius)
