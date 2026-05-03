@@ -10,9 +10,9 @@ class Game:
         self.rounds = 0
         self.currentRound = 0
         self.board = None
-        self.agents = [ExpertAgent(), IntermediateAgent(), NoviceAgent()]
         self.environment = Environmental()
         self.parseInput(path)
+        self.agents = [ExpertAgent(board=self.board), IntermediateAgent(board=self.board), NoviceAgent(board=self.board)]
         
         self.turn = 0
     
@@ -56,7 +56,7 @@ class Game:
 
                 opponents_alive_before = sum(1 for a in self.agents if a != agent and (a.energy > 0 or len(a.units) > 0))
 
-                agent.playMove(self.board)
+                agent.playMove(self.board, self.agents)
                 
                 opponents_alive_after = sum(1 for a in self.agents if a != agent and (a.energy > 0 or len(a.units) > 0))
                 eliminated_count = opponents_alive_before - opponents_alive_after

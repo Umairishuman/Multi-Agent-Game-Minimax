@@ -25,8 +25,18 @@ class Board:
     
     
     def printBoard(self):
+        # change color to blue, red, green for Expert, Intermediate, Novice respectively
         for row in self.board:
-            print(''.join([cell.type for cell in row]))
+            for cell in row:
+                if cell.owner == 'Expert':
+                    print(f"\033[94m{cell.type}\033[0m", end=' ')
+                elif cell.owner == 'Intermediate':
+                    print(f"\033[91m{cell.type}\033[0m", end=' ')
+                elif cell.owner == 'Novice':
+                    print(f"\033[92m{cell.type}\033[0m", end=' ')
+                else:
+                    print(cell.type, end=' ')
+            print()
     
     def __getitem__(self, key):
         # Support board[x] -> row and board[x, y] -> cell

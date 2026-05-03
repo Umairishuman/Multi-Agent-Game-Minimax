@@ -21,7 +21,7 @@ MINE_FIELD_OUTCOMES = {
 }
 
 class Agent:
-    def __init__(self, energy, maxDepth, x, y, name, radius):
+    def __init__(self, energy, maxDepth, x, y, name, radius, board):
         self.score = 0
         self.energy = energy
         self.name = name
@@ -34,6 +34,7 @@ class Agent:
         self.actions = ["Move", "Fortify", "Wait", "Attack"]
         
         self.disabledUnits = {0: 0, 1: 0}
+        board[x][y].owner = name
 
     def perform_action(self, action_type, unit, targetCell, board):
         if self.energy <= 0:
@@ -160,15 +161,20 @@ class Agent:
             self.energy -= 5
     
     
-    def playMove(self, board):
-        # minimax = Minimax(self, board)
-        unit = random.choice(self.units)
-        targetCell = random.choice(self.generateValidMoves(unit, board))
-        action = random.choice(self.generateValidActions(unit, targetCell, board))
-        self.perform_action(action, unit, targetCell, board)
-        self.updateScore(board)
-        print(f"{self.name} performs {action} with unit at {unit} targeting cell {targetCell}. Energy left: {self.energy}, Score: {self.score}")
-    
+    # def playMove(self, board):
+    #     # minimax = Minimax(self, board)
+    #     unit = random.choice(self.units)
+    #     targetCell = random.choice(self.generateValidMoves(unit, board))
+    #     action = random.choice(self.generateValidActions(unit, targetCell, board))
+    #     self.perform_action(action, unit, targetCell, board)
+    #     self.updateScore(board)
+    #     print(f"{self.name} performs {action} with unit at {unit} targeting cell {targetCell}. Energy left: {self.energy}, Score: {self.score}")
+    def playMove(self, board, allAgents):
+        print(f"{self.name} is thinking (Depth {self.maxDepth})...")
+        minimax = Minimax(self, allAgents)
+        bestAction, bestUnit, bestTarget = minimax.getBestMove(board)
+        print(f"{self.name} performs {bestAction} with unit at {bestUnit} targeting cell {bestTarget}, Energy left: {self.energy}, Score: {self.score}")
+        self.performAction(bestAction, bestUnit, bestTarget, board)
     
     def updateScore(self, board):
         round_score = 0
@@ -216,19 +222,61 @@ class Agent:
         
         
         return actions
+    
 class ExpertAgent(Agent):
-    def __init__(self, energy= 20, maxDepth=7, x=0, y=0, name="Expert", radius=float('inf')):
+    def __init__(self, energy=20, maxDepth=7, x=0, y=0, name="Expert", radius=float('inf')):
         super().__init__(energy, maxDepth, x, y, name, radius)
+        self.transpositionTable = {} # Transposition table ONLY for Expert[cite: 1]
+
+    def evaluate(self, board, allAgents):
+        """Full Evaluation Function (5 Factors)[cite: 1]"""
+        # 1. Score Differential
+        avgOpponentScore = sum(a.score for a in allAgents if a != self) / (len(allAgents) - 1)
+        scoreDiff = self.score - avgOpponentScore
+        
+        # 2. Territory Control (Fortress heavily weighted)[cite: 1]
+        territoryScore = sum(3 if board[x][y].type == 'F' else 1 
+                              for x in range(board.rows) for y in range(board.cols) 
+                              if board[x][y].owner == self.name)
+        
+        # 3. Energy Advantage[cite: 1]
+        avgOpponentEnergy = sum(a.energy for a in allAgents if a != self) / (len(allAgents) - 1)
+        energyDiff = self.energy - avgOpponentEnergy
+        
+        # (You will need to implement Positional Advantage and Threat Assessment based on distance/adjacencies)
+        positionalAdv = 0 # Placeholder: calculate proximity to F tiles
+        threatPenalty = 0 # Placeholder: penalty if enemy units are adjacent to your owned cells
+        
+        return scoreDiff + (territoryScore * 1.5) + energyDiff + positionalAdv - threatPenalty
 
 
 class IntermediateAgent(Agent):
-    def __init__(self, energy= 20, maxDepth=5, x=0, y=0, name="Intermediate", radius=5):
+    def __init__(self, energy=20, maxDepth=5, x=0, y=0, name="Intermediate", radius=5):
         super().__init__(energy, maxDepth, x, y, name, radius)
+
+    def evaluate(self, board, allAgents):
+        """3-Factor Evaluation Function[cite: 1]"""
+        # 1. Score Differential
+        avgOpponentScore = sum(a.score for a in allAgents if a != self) / max(1, len(allAgents) - 1)
+        scoreDiff = self.score - avgOpponentScore
+        
+        # 2. Territory Control
+        territoryScore = sum(2 if board[x][y].type == 'F' else 1 
+                              for x in range(board.rows) for y in range(board.cols) 
+                              if board[x][y].owner == self.name)
+        
+        # 3. Energy Advantage
+        avgOpponentEnergy = sum(a.energy for a in allAgents if a != self) / max(1, len(allAgents) - 1)
+        energyDiff = self.energy - avgOpponentEnergy
+        
+        return scoreDiff + territoryScore + energyDiff
 
 
 class NoviceAgent(Agent):
-    def __init__(self, energy= 20, maxDepth=3, x=0, y=0, name="Novice", radius=3):
+    def __init__(self, energy=20, maxDepth=3, x=0, y=0, name="Novice", radius=3):
         super().__init__(energy, maxDepth, x, y, name, radius)
 
-
-
+    def evaluate(self, board, allAgents):
+        """Greedy Evaluation Function (Score Differential Only)[cite: 1]"""
+        avgOpponentScore = sum(a.score for a in allAgents if a != self) / max(1, len(allAgents) - 1)
+        return self.score - avgOpponentScore
