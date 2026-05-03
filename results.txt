@@ -1,0 +1,255 @@
+STOCHASTIC BATTLEFIELD — Per-Move Node Report
+============================================================
+
+Move 1 | Agent Expert
+  Action text               : Expert is thinking (Depth 7)...
+  [Expert] nodes visited=1432, pruned=312, bestVal=2.22
+Expert performs Wait with unit at (7, 0) targeting cell (7, 0), Energy left: 20, Score: 0
+  Nodes explored            : 1432
+  Nodes pruned (Alpha-Beta) : 312 (21.8%)
+
+Move 2 | Agent Intermediate
+  Action text               : Intermediate is thinking (Depth 5)...
+  [Intermediate] nodes visited=5192, pruned=984, bestVal=1.30
+Intermediate performs Move with unit at (0, 0) targeting cell (1, 0), Energy left: 20, Score: 0
+  Nodes explored            : 5192
+  Nodes pruned (Alpha-Beta) : 984 (19.0%)
+
+Move 3 | Agent Novice
+  Action text               : Novice is thinking (Depth 3)...
+  [Novice] nodes visited=528, pruned=126, bestVal=0.00
+Novice performs Wait with unit at (3, 7) targeting cell (4, 7), Energy left: 20, Score: 0
+  Nodes explored            : 528
+  Nodes pruned (Alpha-Beta) : 126 (23.9%)
+
+Move 4 | Agent Expert
+  Action text               : Expert is thinking (Depth 7)...
+  [Expert] nodes visited=27558, pruned=2884, bestVal=8.52
+Expert performs Move with unit at (7, 0) targeting cell (6, 0), Energy left: 19, Score: 1
+  Nodes explored            : 27558
+  Nodes pruned (Alpha-Beta) : 2884 (10.5%)
+
+Move 5 | Agent Intermediate
+  Action text               : Intermediate is thinking (Depth 5)...
+  [Intermediate] nodes visited=33196, pruned=11704, bestVal=2.30
+Intermediate performs Move with unit at (1, 0) targeting cell (2, 0), Energy left: 19, Score: 2
+  Nodes explored            : 33196
+  Nodes pruned (Alpha-Beta) : 11704 (35.3%)
+
+Move 6 | Agent Novice
+  Action text               : Novice is thinking (Depth 3)...
+  [Novice] nodes visited=1212, pruned=162, bestVal=-0.50
+Novice performs Wait with unit at (3, 7) targeting cell (4, 7), Energy left: 19, Score: 1
+  Nodes explored            : 1212
+  Nodes pruned (Alpha-Beta) : 162 (13.4%)
+
+Move 7 | Agent Expert
+  Action text               : Expert is thinking (Depth 7)...
+  [Expert] nodes visited=110000, pruned=10637, bestVal=10.92
+Expert performs Move with unit at (6, 0) targeting cell (6, 1), Energy left: 18, Score: 3
+  Nodes explored            : 110000
+  Nodes pruned (Alpha-Beta) : 10637 (9.7%)
+
+Move 8 | Agent Intermediate
+  Action text               : Intermediate is thinking (Depth 5)...
+  [Intermediate] nodes visited=130648, pruned=20898, bestVal=5.00
+Intermediate performs Move with unit at (2, 0) targeting cell (1, 0), Energy left: 18, Score: 4
+  Nodes explored            : 130648
+  Nodes pruned (Alpha-Beta) : 20898 (16.0%)
+
+Move 9 | Agent Novice
+  Action text               : Novice is thinking (Depth 3)...
+  [Novice] nodes visited=528, pruned=126, bestVal=-1.50
+Novice performs Wait with unit at (3, 7) targeting cell (4, 7), Energy left: 18, Score: 2
+  Nodes explored            : 528
+  Nodes pruned (Alpha-Beta) : 126 (23.9%)
+
+Move 10 | Agent Expert
+  Action text               : Expert is thinking (Depth 7)...
+  [Expert] nodes visited=56684, pruned=5548, bestVal=14.02
+Expert performs Move with unit at (6, 1) targeting cell (6, 2), Energy left: 17, Score: 6
+  Nodes explored            : 56684
+  Nodes pruned (Alpha-Beta) : 5548 (9.8%)
+
+Move 11 | Agent Intermediate
+  Action text               : Intermediate is thinking (Depth 5)...
+  [Intermediate] nodes visited=102010, pruned=13592, bestVal=6.80
+Intermediate performs Move with unit at (0, 0) targeting cell (0, 1), Energy left: 17, Score: 7
+  Nodes explored            : 102010
+  Nodes pruned (Alpha-Beta) : 13592 (13.3%)
+
+Move 12 | Agent Novice
+  Action text               : Novice is thinking (Depth 3)...
+  [Novice] nodes visited=528, pruned=126, bestVal=-3.50
+Novice performs Wait with unit at (3, 7) targeting cell (4, 7), Energy left: 17, Score: 3
+  Nodes explored            : 528
+  Nodes pruned (Alpha-Beta) : 126 (23.9%)
+
+Move 13 | Agent Expert
+  Action text               : Expert is thinking (Depth 7)...
+  [Expert] nodes visited=65219, pruned=6109, bestVal=18.39
+Expert performs Move with unit at (6, 2) targeting cell (6, 3), Energy left: 16, Score: 12
+  Nodes explored            : 65219
+  Nodes pruned (Alpha-Beta) : 6109 (9.4%)
+
+Move 14 | Agent Intermediate
+  Action text               : Intermediate is thinking (Depth 5)...
+  [Intermediate] nodes visited=66544, pruned=11644, bestVal=10.30
+Intermediate performs Move with unit at (0, 1) targeting cell (0, 2), Energy left: 16, Score: 13
+  Nodes explored            : 66544
+  Nodes pruned (Alpha-Beta) : 11644 (17.5%)
+
+Move 15 | Agent Novice
+  Action text               : Novice is thinking (Depth 3)...
+  [Novice] nodes visited=600, pruned=162, bestVal=-8.50
+Novice performs Wait with unit at (3, 7) targeting cell (4, 7), Energy left: 16, Score: 4
+  Nodes explored            : 600
+  Nodes pruned (Alpha-Beta) : 162 (27.0%)
+
+Move 16 | Agent Expert
+  Action text               : Expert is thinking (Depth 7)...
+  [Expert] nodes visited=3413, pruned=747, bestVal=17.95
+Expert performs Wait with unit at (6, 3) targeting cell (6, 3), Energy left: 15, Score: 19
+  Nodes explored            : 3413
+  Nodes pruned (Alpha-Beta) : 747 (21.9%)
+
+Move 17 | Agent Intermediate
+  Action text               : Intermediate is thinking (Depth 5)...
+  [Intermediate] nodes visited=12810, pruned=1470, bestVal=14.30
+Intermediate performs Move with unit at (0, 2) targeting cell (1, 2), Energy left: 15, Score: 20
+  Nodes explored            : 12810
+  Nodes pruned (Alpha-Beta) : 1470 (11.5%)
+
+Move 18 | Agent Novice
+  Action text               : Novice is thinking (Depth 3)...
+  [Novice] nodes visited=600, pruned=162, bestVal=-14.50
+Novice performs Wait with unit at (3, 7) targeting cell (4, 7), Energy left: 15, Score: 5
+  Nodes explored            : 600
+  Nodes pruned (Alpha-Beta) : 162 (27.0%)
+
+Move 19 | Agent Expert
+  Action text               : Expert is thinking (Depth 7)...
+  [Expert] nodes visited=108157, pruned=12314, bestVal=27.09
+Expert performs Move with unit at (6, 3) targeting cell (6, 4), Energy left: 14, Score: 26
+  Nodes explored            : 108157
+  Nodes pruned (Alpha-Beta) : 12314 (11.4%)
+
+Move 20 | Agent Intermediate
+  Action text               : Intermediate is thinking (Depth 5)...
+  [Intermediate] nodes visited=121781, pruned=18928, bestVal=18.20
+Intermediate performs Move with unit at (1, 2) targeting cell (1, 3), Energy left: 14, Score: 28
+  Nodes explored            : 121781
+  Nodes pruned (Alpha-Beta) : 18928 (15.5%)
+
+Move 21 | Agent Novice
+  Action text               : Novice is thinking (Depth 3)...
+  [Novice] nodes visited=672, pruned=198, bestVal=-21.00
+Novice performs Wait with unit at (3, 7) targeting cell (4, 7), Energy left: 14, Score: 6
+  Nodes explored            : 672
+  Nodes pruned (Alpha-Beta) : 198 (29.5%)
+
+Move 22 | Agent Expert
+  Action text               : Expert is thinking (Depth 7)...
+  [Expert] nodes visited=122174, pruned=12107, bestVal=30.19
+Expert performs Move with unit at (6, 4) targeting cell (5, 4), Energy left: 13, Score: 34
+  Nodes explored            : 122174
+  Nodes pruned (Alpha-Beta) : 12107 (9.9%)
+
+Move 23 | Agent Intermediate
+  Action text               : Intermediate is thinking (Depth 5)...
+  [Intermediate] nodes visited=200882, pruned=24336, bestVal=19.80
+Intermediate performs Move with unit at (1, 3) targeting cell (1, 4), Energy left: 13, Score: 34
+  Nodes explored            : 200882
+  Nodes pruned (Alpha-Beta) : 24336 (12.1%)
+
+Move 24 | Agent Novice
+  Action text               : Novice is thinking (Depth 3)...
+  [Novice] nodes visited=1212, pruned=162, bestVal=-27.00
+Novice performs Wait with unit at (3, 7) targeting cell (4, 7), Energy left: 13, Score: 7
+  Nodes explored            : 1212
+  Nodes pruned (Alpha-Beta) : 162 (13.4%)
+
+Move 25 | Agent Expert
+  Action text               : Expert is thinking (Depth 7)...
+  [Expert] nodes visited=221989, pruned=22912, bestVal=36.01
+Expert performs Move with unit at (7, 0) targeting cell (7, 1), Energy left: 12, Score: 43
+  Nodes explored            : 221989
+  Nodes pruned (Alpha-Beta) : 22912 (10.3%)
+
+Move 26 | Agent Intermediate
+  Action text               : Intermediate is thinking (Depth 5)...
+  [Intermediate] nodes visited=184196, pruned=31490, bestVal=23.80
+Intermediate performs Move with unit at (1, 4) targeting cell (0, 4), Energy left: 12, Score: 42
+  Nodes explored            : 184196
+  Nodes pruned (Alpha-Beta) : 31490 (17.1%)
+
+Move 27 | Agent Novice
+  Action text               : Novice is thinking (Depth 3)...
+  [Novice] nodes visited=1115, pruned=234, bestVal=-34.50
+Novice performs Wait with unit at (3, 7) targeting cell (4, 7), Energy left: 12, Score: 8
+  Nodes explored            : 1115
+  Nodes pruned (Alpha-Beta) : 234 (21.0%)
+
+Move 28 | Agent Expert
+  Action text               : Expert is thinking (Depth 7)...
+  [Expert] nodes visited=293506, pruned=27319, bestVal=42.71
+Expert performs Move with unit at (7, 1) targeting cell (7, 2), Energy left: 11, Score: 53
+  Nodes explored            : 293506
+  Nodes pruned (Alpha-Beta) : 27319 (9.3%)
+
+Move 29 | Agent Intermediate
+  Action text               : Intermediate is thinking (Depth 5)...
+  [Intermediate] nodes visited=287759, pruned=40062, bestVal=28.30
+Intermediate performs Move with unit at (0, 4) targeting cell (0, 5), Energy left: 11, Score: 51
+  Nodes explored            : 287759
+  Nodes pruned (Alpha-Beta) : 40062 (13.9%)
+
+Move 30 | Agent Novice
+  Action text               : Novice is thinking (Depth 3)...
+  [Novice] nodes visited=1758, pruned=306, bestVal=-43.00
+Novice performs Wait with unit at (3, 7) targeting cell (4, 7), Energy left: 11, Score: 9
+  Nodes explored            : 1758
+  Nodes pruned (Alpha-Beta) : 306 (17.4%)
+
+Move 31 | Agent Expert
+  Action text               : Expert is thinking (Depth 7)...
+  [Expert] nodes visited=358826, pruned=31296, bestVal=49.56
+Expert performs Move with unit at (7, 2) targeting cell (7, 3), Energy left: 10, Score: 64
+  Nodes explored            : 358826
+  Nodes pruned (Alpha-Beta) : 31296 (8.7%)
+
+Move 32 | Agent Intermediate
+  Action text               : Intermediate is thinking (Depth 5)...
+  [Intermediate] nodes visited=299486, pruned=51070, bestVal=33.30
+Intermediate performs Move with unit at (0, 5) targeting cell (1, 5), Energy left: 10, Score: 61
+  Nodes explored            : 299486
+  Nodes pruned (Alpha-Beta) : 51070 (17.1%)
+
+Move 33 | Agent Novice
+  Action text               : Novice is thinking (Depth 3)...
+  [Novice] nodes visited=2697, pruned=462, bestVal=-52.50
+Novice performs Wait with unit at (3, 7) targeting cell (4, 7), Energy left: 10, Score: 10
+  Nodes explored            : 2697
+  Nodes pruned (Alpha-Beta) : 462 (17.1%)
+
+Move 34 | Agent Expert
+  Action text               : Expert is thinking (Depth 7)...
+  [Expert] nodes visited=19025, pruned=2658, bestVal=52.23
+Expert performs Wait with unit at (5, 4) targeting cell (5, 4), Energy left: 9, Score: 76
+  Nodes explored            : 19025
+  Nodes pruned (Alpha-Beta) : 2658 (14.0%)
+
+Move 35 | Agent Intermediate
+  Action text               : Intermediate is thinking (Depth 5)...
+  [Intermediate] nodes visited=44538, pruned=5473, bestVal=38.64
+Intermediate performs Move with unit at (1, 5) targeting cell (2, 5), Energy left: 9, Score: 72
+  Nodes explored            : 44538
+  Nodes pruned (Alpha-Beta) : 5473 (12.3%)
+
+Move 36 | Agent Novice
+  Action text               : Novice is thinking (Depth 3)...
+  [Novice] nodes visited=4623, pruned=384, bestVal=-62.70
+Novice performs Move with unit at (3, 6) targeting cell (2, 6), Energy left: 9, Score: 11
+  Nodes explored            : 4623
+  Nodes pruned (Alpha-Beta) : 384 (8.3%)
+

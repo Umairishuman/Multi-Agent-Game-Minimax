@@ -174,7 +174,7 @@ class Agent:
         minimax = Minimax(self, allAgents)
         bestAction, bestUnit, bestTarget = minimax.getBestMove(board)
         print(f"{self.name} performs {bestAction} with unit at {bestUnit} targeting cell {bestTarget}, Energy left: {self.energy}, Score: {self.score}")
-        self.performAction(bestAction, bestUnit, bestTarget, board)
+        self.perform_action(bestAction, bestUnit, bestTarget, board)
     
     def updateScore(self, board):
         round_score = 0
@@ -217,42 +217,65 @@ class Agent:
         if cell.owner != self.name and cell.owner is not None and cell.type != 'X':
             actions.append("Attack")
         
-        if cell.owner != self.name  and cell.type is not 'X':
+        if cell.owner != self.name  and cell.type != 'X':
             actions.append("Move")
         
         
         return actions
     
 class ExpertAgent(Agent):
-    def __init__(self, energy=20, maxDepth=7, x=0, y=0, name="Expert", radius=float('inf')):
-        super().__init__(energy, maxDepth, x, y, name, radius)
+    def __init__(self, energy=20, maxDepth=7, x=0, y=0, name="Expert", radius=float('inf'), board=None):
+        super().__init__(energy, maxDepth, x, y, name, radius, board)
         self.transpositionTable = {} # Transposition table ONLY for Expert[cite: 1]
 
     def evaluate(self, board, allAgents):
-        """Full Evaluation Function (5 Factors)[cite: 1]"""
+        """Full Evaluation Function (5 Factors)"""
+        n_opp = max(1, len(allAgents) - 1)
+
         # 1. Score Differential
-        avgOpponentScore = sum(a.score for a in allAgents if a != self) / (len(allAgents) - 1)
+        avgOpponentScore = sum(a.score for a in allAgents if a != self) / n_opp
         scoreDiff = self.score - avgOpponentScore
-        
-        # 2. Territory Control (Fortress heavily weighted)[cite: 1]
-        territoryScore = sum(3 if board[x][y].type == 'F' else 1 
-                              for x in range(board.rows) for y in range(board.cols) 
-                              if board[x][y].owner == self.name)
-        
-        # 3. Energy Advantage[cite: 1]
-        avgOpponentEnergy = sum(a.energy for a in allAgents if a != self) / (len(allAgents) - 1)
+
+        # 2. Territory Control (Fortress heavily weighted)
+        territoryScore = sum(3 if board[x][y].type == 'F' else 1
+                             for x in range(board.rows) for y in range(board.cols)
+                             if board[x][y].owner == self.name)
+
+        # 3. Energy Advantage
+        avgOpponentEnergy = sum(a.energy for a in allAgents if a != self) / n_opp
         energyDiff = self.energy - avgOpponentEnergy
-        
-        # (You will need to implement Positional Advantage and Threat Assessment based on distance/adjacencies)
-        positionalAdv = 0 # Placeholder: calculate proximity to F tiles
-        threatPenalty = 0 # Placeholder: penalty if enemy units are adjacent to your owned cells
-        
-        return scoreDiff + (territoryScore * 1.5) + energyDiff + positionalAdv - threatPenalty
+
+        # 4. Positional Advantage — inverse Manhattan distance to every unowned Fortress.
+        #    Closer units to F tiles get a higher reward, encouraging Expert to advance
+        #    rather than Wait even when the board looks flat.
+        fortresses = [(x, y) for x in range(board.rows) for y in range(board.cols)
+                      if board[x][y].type == 'F' and board[x][y].owner != self.name]
+        positionalAdv = 0.0
+        for ux, uy in self.units:
+            for fx, fy in fortresses:
+                dist = abs(ux - fx) + abs(uy - fy)
+                positionalAdv += 1.0 / (dist + 1)   # +1 avoids division by zero
+
+        # 5. Threat Penalty — for every cell we own, count adjacent enemy units.
+        #    Each such adjacency subtracts from the score to discourage exposed positions.
+        threatPenalty = 0.0
+        enemy_positions = {pos for a in allAgents if a != self for pos in a.units}
+        adj_offsets = [(0,1),(0,-1),(1,0),(-1,0)]
+        for x in range(board.rows):
+            for y in range(board.cols):
+                if board[x][y].owner == self.name:
+                    for dx, dy in adj_offsets:
+                        if (x+dx, y+dy) in enemy_positions:
+                            threatPenalty += 0.5
+
+        # Energy is only valuable relative to opponents — raw hoarding is penalised
+        # by giving positional progress a stronger weight than energy conservation.
+        return scoreDiff + (territoryScore * 1.5) + (energyDiff * 0.3) + (positionalAdv * 1.5) - threatPenalty
 
 
 class IntermediateAgent(Agent):
-    def __init__(self, energy=20, maxDepth=5, x=0, y=0, name="Intermediate", radius=5):
-        super().__init__(energy, maxDepth, x, y, name, radius)
+    def __init__(self, energy=20, maxDepth=5, x=0, y=0, name="Intermediate", radius=5, board=None):
+        super().__init__(energy, maxDepth, x, y, name, radius, board)
 
     def evaluate(self, board, allAgents):
         """3-Factor Evaluation Function[cite: 1]"""
@@ -273,8 +296,8 @@ class IntermediateAgent(Agent):
 
 
 class NoviceAgent(Agent):
-    def __init__(self, energy=20, maxDepth=3, x=0, y=0, name="Novice", radius=3):
-        super().__init__(energy, maxDepth, x, y, name, radius)
+    def __init__(self, energy=20, maxDepth=3, x=0, y=0, name="Novice", radius=3, board=None):
+        super().__init__(energy, maxDepth, x, y, name, radius, board)
 
     def evaluate(self, board, allAgents):
         """Greedy Evaluation Function (Score Differential Only)[cite: 1]"""

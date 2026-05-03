@@ -18,7 +18,8 @@ class Board:
         parsedBoard = []
         for row in board:
             parsedRow = []
-            for cell in row:
+            tokens = row.split() if ' ' in row else list(row)
+            for cell in tokens:
                 parsedRow.append(Cell(cell, None))
             parsedBoard.append(parsedRow)
         return parsedBoard
@@ -52,5 +53,3 @@ class Board:
             self.board[x][y] = value
             return
         self.board[key] = value
-            
-    
