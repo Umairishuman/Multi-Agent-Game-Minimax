@@ -32,10 +32,9 @@ class Game:
         
     
     def printState(self):
-        print(f"Round: {self.currentRound}/{self.rounds}")
+        print(f"Round: {self.currentRound + 1}/{self.rounds}")
         self.board.printBoard()
-        for agent in self.agents:
-            print(agent)
+     
         
 
     def play(self):
@@ -43,7 +42,12 @@ class Game:
         # gui.start()
         
         while self.currentRound < self.rounds:
+            print ("=============================================================================")
+            print (f"Round {self.currentRound + 1} begins!")
             for agent in self.agents:
                 self.environment.applyEnvironmentalEffect(self.board, self.agents)
-        
-        
+                agent.playMove(self.board)
+                
+            self.printState()
+            self.currentRound += 1
+            

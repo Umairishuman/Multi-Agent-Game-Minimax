@@ -56,7 +56,19 @@ class Environmental:
     def removeFogOfWar(self, agents):
         for agent in agents:
             agent.resetRadius()
-
+        print("Fog of War removed, vision radius restored.")
+    def checkFortifiedCells(self, board):
+        to_remove = []
+        for cell, turns in self.fortifiedCells.items():
+            if turns > 0:
+                self.fortifiedCells[cell] -= 1
+            else:
+                x, y = cell
+                board[x][y].type = '.'
+                board[x][y].defenseValue = 1
+                to_remove.append(cell)
+        for cell in to_remove:
+            del self.fortifiedCells[cell]
     def applyEnvironmentalEffect(self, board, agents):
         if self.fogofwarapplied:
             self.removeFogOfWar(agents)
@@ -77,3 +89,4 @@ class Environmental:
         elif effect == 'fogOfWar':
             self.fogOfWar(agents)
             self.fogofwarapplied = True
+        print(f"Environmental effect applied: {effect}")

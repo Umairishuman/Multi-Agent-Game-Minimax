@@ -1,5 +1,6 @@
 import random
-
+from Minimax import Minimax
+from Board import Board
 # 9-sided die mapping
 COMBAT_OUTCOMES = {
     (1, 2): {"prob": 0.10, "type": "Fail", "energy_loss": 1},
@@ -15,35 +16,49 @@ class Agent:
         self.score = 0
         self.energy = energy
         self.name = name
-        self.units = [(x, y), (x, y)] # Every agent starts with 2 units
+        self.units = [(x, y), (x, y)] 
         self.radius = radius
         self.maxDepth = maxDepth
         self.nodesVisited = 0
         self.nodesPruned = 0
         self.defaultRadius = radius
         self.actions = ["Move", "Fortify", "Wait", "Attack"]
-
-    def handle_combat(self, board, target_pos, attacker_agent, move_onto=False):
-        roll = random.randint(1, 9)
         
-        pass
+    
 
-    def perform_action(self, action_type, unit_idx, target_pos, board):
+    def perform_action(self, action_type, unit, targetCell, board):
         if self.energy <= 0:
             return 
         
         self.energy -= 1 
         
         if action_type == "Move":
-            
-            pass
+            self.move(unit, targetCell, board)
         elif action_type == "Fortify":
-            cell = board[target_pos]
-            if cell.owner == self.name and cell.defenseValue < 3:
-                cell.defenseValue += 1
-                
+            self.fortify(unit, targetCell, board)
+        elif action_type == "Wait":
+            self.wait()
+        elif action_type == "Attack":
+            self.attack(unit, targetCell, board)
+
     def resetRadius(self):
         self.radius = self.defaultRadius
+    
+    
+    def move(self, unit, targetCell, board):
+        pass
+    def fortify(self, unit, targetCell, board):
+        pass
+    def wait(self):
+        self.energy -= 1
+    def attack(self, unit, targetCell, board):
+        pass
+    
+    
+    def playMove(self, board):
+        # minimax = Minimax(self, board)
+        print("Agent is thinking...")
+        print("Agent has made a move!")
 
 class ExpertAgent(Agent):
     def __init__(self, energy= 20, maxDepth=7, x=0, y=0, name="Expert", radius=float('inf')):
