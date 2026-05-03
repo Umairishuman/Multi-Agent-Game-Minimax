@@ -13,6 +13,10 @@ class Agent:
     def __str__(self):
         return f"{self.name} (Energy: {self.energy}, Score: {self.score}, Nodes Visited: {self.nodesVisited}, Nodes Pruned: {self.nodesPruned})"
 
+    
+    def move(self):
+        # Placeholder for move logic, to be implemented based on the environment and agent's strategy
+        pass
 
 class ExpertAgent(Agent):
     def __init__(self, energy= 20, maxDepth=7, x=0, y=0, name="Expert", radius=float('inf')):

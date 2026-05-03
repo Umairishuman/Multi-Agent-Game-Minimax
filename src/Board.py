@@ -12,7 +12,7 @@ class Board:
         self.board = self.parseBoard(board)
         self.rows = rows
         self.cols = cols
-        
+    
 
     def parseBoard(self, board):
         parsedBoard = []
@@ -27,5 +27,20 @@ class Board:
     def printBoard(self):
         for row in self.board:
             print(''.join([cell.type for cell in row]))
+    
+    def __getitem__(self, key):
+        # Support board[x] -> row and board[x, y] -> cell
+        if isinstance(key, tuple):
+            x, y = key
+            return self.board[x][y]
+        return self.board[key]
+
+    def __setitem__(self, key, value):
+        # Support setting via board[x] = row or board[x, y] = cell
+        if isinstance(key, tuple):
+            x, y = key
+            self.board[x][y] = value
+            return
+        self.board[key] = value
             
     
